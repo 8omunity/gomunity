@@ -16,9 +16,10 @@ This project is enhanced with a complete autonomous development system using Cla
 - Outputs structured YAML specifications for implementation
 
 #### 🎨 design-agent
-- Processes design requirements for PWA-optimized UI
-- Maps components to Radix UI primitives
-- Defines mobile-first responsive patterns and accessibility standards
+- Implements design system and UI component library from Figma designs
+- Converts Figma (Radix UI) to production-ready React components
+- Manages design tokens (colors, typography, spacing)
+- Builds accessible, responsive components in `src/ui/`
 
 #### 📚 docs-agent
 - Researches implementation patterns using Ref MCP
@@ -26,9 +27,10 @@ This project is enhanced with a complete autonomous development system using Cla
 - Validates technical approaches against official documentation
 
 #### 🏗️ builder-agent
-- Implements Next.js PWA applications with full-stack architecture
-- Uses established patterns: Server Actions, Radix UI, Supabase, Prisma, TSyringe
-- Maintains code quality and PWA compliance
+- Implements full-stack features using Feature Slice Design architecture
+- Uses design-agent components from `src/ui/` for consistent UI
+- Manages feature-specific logic in `src/features/` with isolated services
+- Implements Server Actions, Supabase, Prisma following FSD structure
 
 #### 🔄 git-agent
 - Manages trunk-based Git workflow with Korean conventional commits
@@ -104,29 +106,101 @@ This project is enhanced with a complete autonomous development system using Cla
 - 경험 평가 및 신뢰도
 - 1:1 상담 요청
 
-## 🏗 Technical Architecture
+## 🏗 Technical Architecture (Feature Slice Design)
 
+### Project Structure
 ```
-/app
-  /api          # Backend API routes
-  /(auth)       # Authentication pages
-  /(main)       # Main application pages
-    /posts      # 고민 포스팅
-    /products   # 제품 탐색
-    /profile    # 사용자 프로필
+/src
+  /ui                        # 🎨 Design System (design-agent)
+    /components/             # Radix UI based components
+      button.tsx
+      input.tsx
+      card.tsx
+      dialog.tsx
+    /tokens/                 # Design tokens
+      colors.ts
+      typography.ts
+      spacing.ts
+    index.ts                 # Barrel exports
 
-/components
-  /ui           # Reusable UI components
-  /features     # Feature-specific components
-    /post       # 포스팅 관련
-    /product    # 제품 관련
-    /user       # 사용자 관련
+  /features/                 # 🏗️ Features (builder-agent)
+    /login/
+      /ui/                   # Feature-specific UI compositions
+        LoginForm.tsx
+        SocialButtons.tsx
+      /services/             # Feature business logic
+        auth.service.ts
+      /actions/              # Server Actions
+        login.actions.ts
+      /types/                # Feature types
+        login.types.ts
+      index.ts
 
-/lib
-  /api          # API client functions
-  /hooks        # Custom React hooks
-  /utils        # Utility functions
-  /types        # TypeScript type definitions
+    /posts/
+      /ui/
+        PostCard.tsx
+        PostForm.tsx
+        PostList.tsx
+      /services/
+        posts.service.ts
+      /actions/
+        posts.actions.ts
+      /types/
+        posts.types.ts
+      index.ts
+
+    /products/
+      /ui/
+      /services/
+      /actions/
+      /types/
+      index.ts
+
+/app                         # Next.js App Router
+  /(auth)/
+    /login/
+      page.tsx              # Imports from src/features/login
+  /(main)/
+    /posts/
+      page.tsx              # Imports from src/features/posts
+    /products/
+      page.tsx
+
+/prisma                      # Database schema
+  schema.prisma
+
+/lib                         # Shared utilities
+  /supabase/
+  /utils/
+```
+
+### Feature Slice Design Principles
+
+#### Layer Separation
+1. **UI Layer** (`src/ui/`): Design system components (design-agent)
+2. **Feature Layer** (`src/features/`): Business logic per feature (builder-agent)
+3. **App Layer** (`app/`): Next.js routing and page composition
+
+#### Feature Structure
+Each feature in `src/features/` is self-contained:
+- `/ui/` - Feature-specific UI using `src/ui/` components
+- `/services/` - Business logic and data fetching
+- `/actions/` - Server Actions for mutations
+- `/types/` - TypeScript types for the feature
+
+#### Import Rules
+```typescript
+// ✅ CORRECT: Feature imports from UI layer
+import { Button, Card } from '@/ui';
+
+// ✅ CORRECT: Page imports from feature
+import { PostForm } from '@/features/posts';
+
+// ❌ WRONG: Cross-feature imports
+// import { LoginForm } from '@/features/login'; // in posts feature
+
+// ❌ WRONG: Feature modifying UI layer
+// Don't edit src/ui/ from builder-agent
 ```
 
 ## 💻 Tech Stack
@@ -145,9 +219,10 @@ This project is enhanced with a complete autonomous development system using Cla
 
 ### Code Standards
 - **명명 규칙**: camelCase for 변수/함수, PascalCase for 컴포넌트
-- **파일 구조**: feature-based organization
-- **컴포넌트**: 작고 재사용 가능한 단위로 분리
+- **파일 구조**: Feature Slice Design (FSD)
+- **컴포넌트**: UI layer (`src/ui/`) vs Feature layer (`src/features/`)
 - **타입 정의**: 모든 props와 API response에 TypeScript 타입 정의
+- **Import 경로**: `@/ui`, `@/features/*`, `@/lib` aliases 사용
 
 ### Best Practices
 - Server Components 우선 사용
@@ -160,8 +235,10 @@ This project is enhanced with a complete autonomous development system using Cla
 ### IMPORTANT CONSTRAINTS
 - ❌ NEVER add features not in current sprint
 - ❌ NO console.log in production code
-- ❌ NO hardcoded values - use environment variables
-- ✅ ALWAYS use existing components first
+- ❌ NO hardcoded values - use design tokens from `src/ui/tokens/`
+- ❌ NO cross-feature imports - features must be isolated
+- ✅ ALWAYS use `src/ui/` components from design-agent
+- ✅ ALWAYS follow Feature Slice Design structure
 - ✅ ALWAYS handle loading and error states
 - ✅ ALWAYS use TypeScript strict mode
 
