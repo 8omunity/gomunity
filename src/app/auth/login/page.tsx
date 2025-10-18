@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { CustomKakaoAuth } from '@/lib/custom-kakao-auth'
 import { useAuthStore } from '@/lib/auth-store'
 
 export default function LoginPage() {
@@ -17,27 +17,17 @@ export default function LoginPage() {
     }
   }, [user, router])
 
-  const handleKakaoLogin = async () => {
+  const handleKakaoLogin = () => {
     try {
       setIsLoading(true)
       setLoading(true)
 
-      // Sign in with Kakao OAuth
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'kakao',
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`
-        }
-      })
+      // Use our custom Kakao OAuth flow (no email permissions)
+      CustomKakaoAuth.redirectToKakaoAuth()
 
-      if (error) {
-        console.error('Kakao login error:', error)
-        alert('로그인 중 오류가 발생했습니다. 다시 시도해주세요.')
-      }
     } catch (error) {
       console.error('Unexpected login error:', error)
       alert('로그인 중 오류가 발생했습니다. 다시 시도해주세요.')
-    } finally {
       setIsLoading(false)
       setLoading(false)
     }
