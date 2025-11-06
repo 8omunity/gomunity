@@ -1,11 +1,46 @@
 'use client'
 
-import Image from 'next/image'
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabase'
+import { useAuthStore } from '@/lib/auth-store'
 
 export default function LoginPage() {
-  const handleKakaoLogin = () => {
-    // TODO: Implement Kakao OAuth login
-    console.log('Kakao login clicked')
+  const router = useRouter()
+  const { user, setUser, setProfile, setLoading } = useAuthStore()
+  const [isLoading, setIsLoading] = useState(false)
+
+  useEffect(() => {
+    // If user is already logged in, redirect to home
+    if (user) {
+      router.push('/')
+    }
+  }, [user, router])
+
+  const handleKakaoLogin = async () => {
+    try {
+      setIsLoading(true)
+      setLoading(true)
+
+      // Sign in with Kakao OAuth
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'kakao',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`
+        }
+      })
+
+      if (error) {
+        console.error('Kakao login error:', error)
+        alert('로그인 중 오류가 발생했습니다. 다시 시도해주세요.')
+      }
+    } catch (error) {
+      console.error('Unexpected login error:', error)
+      alert('로그인 중 오류가 발생했습니다. 다시 시도해주세요.')
+    } finally {
+      setIsLoading(false)
+      setLoading(false)
+    }
   }
 
   return (
@@ -111,17 +146,29 @@ export default function LoginPage() {
         {/* Kakao Login Button */}
         <button
           onClick={handleKakaoLogin}
-          className="w-full max-w-[370px] h-[56px] mb-[46px] rounded-[12px] overflow-hidden hover:opacity-90 transition-opacity bg-[#FEE500]"
+          disabled={isLoading}
+          className="w-full max-w-[370px] h-[56px] mb-[46px] rounded-[12px] overflow-hidden hover:opacity-90 transition-opacity bg-[#FEE500] disabled:opacity-50 disabled:cursor-not-allowed"
           aria-label="카카오 로그인"
         >
           <div className="w-full h-full flex items-center justify-center gap-2">
-            {/* Kakao Icon */}
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-              <path d="M9 0C4.03 0 0 3.35 0 7.48C0 10.08 1.41 12.41 3.55 13.86C3.42 14.33 2.93 16.13 2.82 16.52C2.82 16.52 2.76 16.81 2.96 16.93C3.16 17.05 3.46 16.89 3.46 16.89C3.99 16.56 6.28 14.94 6.87 14.51C7.57 14.63 8.28 14.69 9 14.69C13.97 14.69 18 11.35 18 7.21C18 3.07 13.97 0 9 0Z" fill="#000000"/>
-            </svg>
-            <span className="text-[15px] font-medium text-[#000000] opacity-85">
-              카카오 로그인
-            </span>
+            {isLoading ? (
+              <>
+                <div className="animate-spin rounded-full h-[18px] w-[18px] border-b-2 border-black"></div>
+                <span className="text-[15px] font-medium text-[#000000] opacity-85">
+                  로그인 중...
+                </span>
+              </>
+            ) : (
+              <>
+                {/* Kakao Icon */}
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                  <path d="M9 0C4.03 0 0 3.35 0 7.48C0 10.08 1.41 12.41 3.55 13.86C3.42 14.33 2.93 16.13 2.82 16.52C2.82 16.52 2.76 16.81 2.96 16.93C3.16 17.05 3.46 16.89 3.46 16.89C3.99 16.56 6.28 14.94 6.87 14.51C7.57 14.63 8.28 14.69 9 14.69C13.97 14.69 18 11.35 18 7.21C18 3.07 13.97 0 9 0Z" fill="#000000"/>
+                </svg>
+                <span className="text-[15px] font-medium text-[#000000] opacity-85">
+                  카카오 로그인
+                </span>
+              </>
+            )}
           </div>
         </button>
 
